@@ -1,4 +1,4 @@
-module github.com/NickDemiman/InTermPlay
+module github.com/nickdemiman/in-term-play
 
 go 1.22.2
 

@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NickDemiman/InTermPlay/pkg/in_term_play/screen"
-	"github.com/NickDemiman/InTermPlay/pkg/in_term_play/timer"
 	"github.com/gdamore/tcell/v2"
+	"github.com/nickdemiman/in-term-play/pkg/in_term_play/screen"
+	"github.com/nickdemiman/in-term-play/pkg/in_term_play/timer"
 )
 
 type (
