@@ -1,4 +1,4 @@
-package core
+package intermplay
 
 type (
 	ColliderMap struct {

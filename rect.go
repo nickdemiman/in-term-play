@@ -1,4 +1,4 @@
-package core
+package intermplay
 
 type Rect struct {
 	origin Vector2

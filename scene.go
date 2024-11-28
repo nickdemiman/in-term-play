@@ -1,69 +1,76 @@
-package core
+package intermplay
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/nickdemiman/in-term-play/screen"
 	"github.com/nickdemiman/in-term-play/timer"
 )
 
 type (
-	Scene interface {
-		AddObject(GameObject) Scene
+	IScene interface {
+		AddObject(GameObject)
 		Object
 		timer.TimerSender
 	}
 
-	scene struct {
-		gameObjects   map[GameObject]bool
-		quitq         chan struct{}
-		gameEventChan *chan GameEvent
-		bounds        Rect
-		style         tcell.Style
+	Scene struct {
+		GameObjects map[GameObject]bool
+		Quitq       chan struct{}
+		Bounds      Rect
+		Style       tcell.Style
+		IScene
 	}
 )
 
-func NewScene(x, y, width, height int, gameEventChan *chan GameEvent) (Scene, error) {
-	scene := new(scene)
-	scene.quitq = make(chan struct{})
-	scene.gameObjects = make(map[GameObject]bool)
-	scene.gameEventChan = gameEventChan
-	scene.bounds = NewRect(x, y, width, height)
-	scene.style = tcell.StyleDefault.
-		Foreground(tcell.ColorWhite).
-		Background(tcell.ColorBlack)
-
-	return scene, nil
-}
-
-func (scene *scene) AddObject(obj GameObject) Scene {
-	_, ok := scene.gameObjects[obj]
+func (scene Scene) AddObject(obj GameObject) {
+	_, ok := scene.GameObjects[obj]
 
 	if !ok {
-		scene.gameObjects[obj] = true
-		obj.Awake()
+		scene.GameObjects[obj] = true
+		obj.awake()
 	}
-
-	return scene
 }
 
-func (scene *scene) NotifyTimer() {
+func (scene Scene) NotifyTimer() {
+	scene.update()
+}
+
+func (scene Scene) awake() {
+	scene.Awake()
+
+	<-scene.Quitq
+}
+func (scene Scene) update() {
 	scene.Update()
 }
+func (scene Scene) dispose() {
+	scene.Quitq <- struct{}{}
 
-func (scene *scene) Awake() {
-
-	<-scene.quitq
-
-	for obj := range scene.gameObjects {
+	for obj := range scene.GameObjects {
 		obj.Dispose()
-		delete(scene.gameObjects, obj)
+		delete(scene.GameObjects, obj)
 	}
+
 	timer.GetTimer().Unregister(scene)
-	screen.GetGameScreen().Screen.Clear()
+	GetRenderer().Clear()
+
+	scene.Dispose()
 }
 
-func (scene *scene) Update() {}
+func (scene Scene) Awake()   {}
+func (scene Scene) Update()  {}
+func (scene Scene) Dispose() {}
 
-func (scene *scene) Dispose() {
-	scene.quitq <- struct{}{}
-}
+// func NewScene(x, y, width, height int) IScene {
+// 	scene := new(S)
+
+// 	style := tcell.StyleDefault.
+// 		Foreground(tcell.ColorWhite).
+// 		Background(tcell.ColorBlack)
+
+// 	scene.quitq = make(chan struct{})
+// 	scene.GameObjects = make(map[GameObject]bool)
+// 	scene.Bounds = NewRect(x, y, width, height)
+// 	scene.Style = style
+
+// 	return scene
+// }

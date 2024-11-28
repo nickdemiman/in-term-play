@@ -1,77 +1,45 @@
-package core
+package intermplay
 
 import (
-	"sync"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/nickdemiman/in-term-play/screen"
 	"github.com/nickdemiman/in-term-play/timer"
 )
 
 type (
 	Game struct {
-		gameEventChan chan GameEvent
-		gameover      bool
-		currentScene  Scene
-	}
-
-	TermEventsNotifier struct {
-		listeners map[TermEventsListener]bool
-		sync.Mutex
-	}
-	TermEventsListener interface {
-		handleTermEvents(tcell.Event)
+		quitq        chan struct{}
+		gameover     bool
+		currentScene IScene
 	}
 )
 
-var globalEventer TermEventsNotifier
-
-func (t *TermEventsNotifier) Run() {
-	for {
-		event := screen.GetGameScreen().Screen.PollEvent()
-		t.Notify(event)
-	}
-}
-
-func (t *TermEventsNotifier) Notify(event tcell.Event) {
-	for listener := range t.listeners {
-		listener.handleTermEvents(event)
-	}
-}
-
-func (t *TermEventsNotifier) Register(listener TermEventsListener) {
-	defer t.Unlock()
-	t.Lock()
-	t.listeners[listener] = true
-}
-
-func (t *TermEventsNotifier) Unregister(listener TermEventsListener) {
-	defer t.Unlock()
-	t.Lock()
-	delete(t.listeners, listener)
-}
+var (
+	_term tcell.Screen
+)
 
 func NewGame() *Game {
 	game := new(Game)
 	game.gameover = false
-	game.gameEventChan = make(chan GameEvent)
+	game.quitq = make(chan struct{})
 
 	return game
 }
 
 func (game *Game) Close() {
 	game.currentScene.Dispose()
+	GetRenderer().Fini()
+	game.quitq <- struct{}{}
+}
+
+func (game *Game) LoadScene(scene IScene) {
+	game.currentScene = scene
 }
 
 func (game *Game) Run() {
-	defer close(game.gameEventChan)
-
-	var (
-		err   error
-		scene Scene
-	)
-
 	globalEventer.listeners = make(map[TermEventsListener]bool)
 	timer.SetInterval(time.Millisecond * 100)
 
@@ -79,15 +47,10 @@ func (game *Game) Run() {
 	go globalEventer.Run()
 
 	globalEventer.Register(game)
+	game.currentScene.awake()
 
-	scene, err = NewScene(0, 0, 50, 20, &game.gameEventChan)
+	<-game.quitq
 
-	if err != nil {
-		panic(err)
-	}
-
-	game.currentScene = scene
-	game.currentScene.Awake()
 }
 
 func (game *Game) handleEscape(key tcell.Key) {
@@ -101,5 +64,32 @@ func (game *Game) handleTermEvents(ev tcell.Event) {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		game.handleEscape(ev.Key())
+	}
+}
+
+func GetRenderer() tcell.Screen {
+	var err error
+
+	if _term == nil {
+		_term, err = tcell.NewScreen()
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return nil
+		}
+		if err = _term.Init(); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return nil
+		}
+
+		_term.SetStyle(tcell.StyleDefault.
+			Foreground(tcell.ColorWhite).
+			Background(tcell.ColorBlack))
+
+		_term.Clear()
+
+		return _term
+	} else {
+		return _term
 	}
 }
