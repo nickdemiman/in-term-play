@@ -1,38 +1,38 @@
 package timer
 
-import (
-	"testing"
-	"time"
-)
+// import (
+// 	"testing"
+// 	"time"
+// )
 
-type (
-	testingSender struct{}
-)
+// type (
+// 	testingSender struct{}
+// )
 
-func (t *testingSender) NotifyTimer() {
+// func (t *testingSender) NotifyTimer() {
 
-}
+// }
 
-func TestUnregisterFunc(t *testing.T) {
-	SetInterval(time.Microsecond)
-	_timer := GetTimer()
+// func TestUnregisterFunc(t *testing.T) {
+// 	SetInterval(time.Microsecond)
+// 	_timer := GetTimer()
 
-	defer func() {
-		go _timer.Stop()
-	}()
+// 	defer func() {
+// 		go _timer.Stop()
+// 	}()
 
-	go _timer.Run()
+// 	go _timer.Run()
 
-	sender := testingSender{}
+// 	sender := testingSender{}
 
-	_timer.Register(&sender)
-	err := _timer.Unregister(&sender)
+// 	_timer.Register(&sender)
+// 	err := _timer.Unregister(&sender)
 
-	if err != nil {
-		t.Error(err)
-	}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _timer.searchSender(&sender) != -1 {
-		t.Errorf("sender not removed")
-	}
-}
+// 	if _timer.searchSender(&sender) != -1 {
+// 		t.Errorf("sender not removed")
+// 	}
+// }

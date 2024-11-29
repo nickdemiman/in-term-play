@@ -19,7 +19,7 @@ func randRange(min, max int) int {
 	return rand.IntN(max-min) + min
 }
 
-func (scene MainScene) generateFood() {
+func (scene *MainScene) generateFood() {
 	x := scene.Bounds.Origin().X
 	y := scene.Bounds.Origin().Y
 	w, h := scene.Bounds.Size()
@@ -32,7 +32,7 @@ func (scene MainScene) generateFood() {
 	scene.AddObject(food)
 }
 
-func (scene MainScene) drawBorders() {
+func (scene *MainScene) drawBorders() {
 	x := scene.Bounds.Origin().X
 	y := scene.Bounds.Origin().Y
 	w, h := scene.Bounds.Size()
@@ -56,13 +56,13 @@ func (scene MainScene) drawBorders() {
 	}
 }
 
-func (scene MainScene) Awake() {
+func (scene *MainScene) Awake() {
 	_player = NewPlayer(engine.NewVector2(10, 10), 5)
 	food := NewFood(engine.NewVector2(5, 5))
 	scene.AddObject(_player)
 	scene.AddObject(food)
 }
-func (scene MainScene) Update() {
+func (scene *MainScene) Update() {
 	engine.GetRenderer().Clear()
 	scene.drawBorders()
 
@@ -93,9 +93,9 @@ loop:
 
 	engine.GetRenderer().Sync()
 }
-func (scene MainScene) Dispose() {}
+func (scene *MainScene) Dispose() {}
 
-func (scene MainScene) checkBounds(obj engine.GameObject) {
+func (scene *MainScene) checkBounds(obj engine.IGameObject) {
 	pos := obj.Position()
 	x := scene.Bounds.Origin().X
 	y := scene.Bounds.Origin().Y
@@ -138,8 +138,7 @@ func NewMainScene(x, y, width, height int) engine.IScene {
 		Foreground(tcell.ColorWhite).
 		Background(tcell.ColorBlack)
 
-	scene.Quitq = make(chan struct{})
-	scene.GameObjects = make(map[engine.GameObject]bool)
+	scene.GameObjects = make(map[engine.IGameObject]bool)
 	scene.Bounds = engine.NewRect(x, y, width, height)
 	scene.Style = style
 

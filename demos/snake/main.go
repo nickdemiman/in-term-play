@@ -10,6 +10,7 @@ func main() {
 
 	scene := internal.NewMainScene(0, 0, 50, 20)
 
+	game.Init()
 	game.LoadScene(scene)
 	game.Run()
 

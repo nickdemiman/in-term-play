@@ -1,42 +1,42 @@
 package intermplay
 
-import (
-	"time"
-)
+// import (
+// 	"time"
+// )
 
-type (
-	Collider interface {
-		Collides(x, y int) bool
-		Bounds() ColliderMap
+// type (
+// 	Collider interface {
+// 		Collides(x, y int) bool
+// 		Bounds() ColliderMap
 
-		EventHandler
-	}
+// 		// EventHandler
+// 	}
 
-	EventCollision struct {
-		when      time.Time
-		initiator Collider
-		target    Collider
-	}
-)
+// 	EventCollision struct {
+// 		when      time.Time
+// 		initiator Collider
+// 		target    Collider
+// 	}
+// )
 
-func (e *EventCollision) When() time.Time {
-	return e.when
-}
+// func (e *EventCollision) When() time.Time {
+// 	return e.when
+// }
 
-func (e *EventCollision) Initiator() Collider {
-	return e.initiator
-}
+// func (e *EventCollision) Initiator() Collider {
+// 	return e.initiator
+// }
 
-func (e *EventCollision) Target() Collider {
-	return e.target
-}
+// func (e *EventCollision) Target() Collider {
+// 	return e.target
+// }
 
-func HandleCollision(init, target Collider) {
-	when := time.Now()
+// func HandleCollision(init, target Collider) {
+// 	when := time.Now()
 
-	eventInit := &EventCollision{when: when, initiator: init, target: target}
-	eventTarget := &EventCollision{when: when, initiator: target, target: init}
+// 	eventInit := &EventCollision{when: when, initiator: init, target: target}
+// 	eventTarget := &EventCollision{when: when, initiator: target, target: init}
 
-	init.HandleEvent(eventInit)
-	target.HandleEvent(eventTarget)
-}
+// 	init.HandleEvent(eventInit)
+// 	target.HandleEvent(eventTarget)
+// }

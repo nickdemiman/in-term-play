@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/nickdemiman/in-term-play/timer"
 )
 
 type (
@@ -14,6 +13,8 @@ type (
 		quitq        chan struct{}
 		gameover     bool
 		currentScene IScene
+		manager      gameEventManager
+		DefaultTermEventsListener
 	}
 )
 
@@ -25,6 +26,7 @@ func NewGame() *Game {
 	game := new(Game)
 	game.gameover = false
 	game.quitq = make(chan struct{})
+	game.manager = gameEventManager{}
 
 	return game
 }
@@ -36,21 +38,48 @@ func (game *Game) Close() {
 }
 
 func (game *Game) LoadScene(scene IScene) {
+	if game.currentScene != nil {
+		// timer.GetTimer().Unregister(game.currentScene)
+		game.currentScene.dispose(game.currentScene)
+	}
+
+	scene.awake(scene)
+	// timer.GetTimer().Register(scene)
 	game.currentScene = scene
 }
 
-func (game *Game) Run() {
-	globalEventer.listeners = make(map[TermEventsListener]bool)
-	timer.SetInterval(time.Millisecond * 100)
+func (game *Game) RunRenderer() {
+	ticker := time.NewTicker(time.Millisecond * 100)
 
-	go timer.GetTimer().Run()
+loop:
+	for {
+		select {
+		case <-ticker.C:
+			if game.currentScene != nil {
+				game.currentScene.update(game.currentScene)
+			}
+		case <-game.quitq:
+			break loop
+		}
+	}
+}
+
+func (game *Game) Init() {
+	globalEventer = TermEventsNotifier{
+		listeners: make(map[TermEventsListener]bool),
+	}
+	// timer.SetInterval(time.Millisecond * 100)
+
+	go game.RunRenderer()
 	go globalEventer.Run()
+}
 
+func (game *Game) Run() {
 	globalEventer.Register(game)
-	game.currentScene.awake()
 
 	<-game.quitq
 
+	globalEventer.Unregister(game)
 }
 
 func (game *Game) handleEscape(key tcell.Key) {

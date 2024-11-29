@@ -12,22 +12,29 @@ type (
 		sync.Mutex
 	}
 	TermEventsListener interface {
+		baseHandleTermEvents(TermEventsListener, tcell.Event)
 		handleTermEvents(tcell.Event)
 	}
+
+	DefaultTermEventsListener struct{}
 )
+
+func (d *DefaultTermEventsListener) baseHandleTermEvents(t TermEventsListener, ev tcell.Event) {
+	t.handleTermEvents(ev)
+}
 
 var globalEventer TermEventsNotifier
 
 func (t *TermEventsNotifier) Run() {
 	for {
 		event := GetRenderer().PollEvent()
-		t.Notify(event)
+		t.NotifyListeners(event)
 	}
 }
 
-func (t *TermEventsNotifier) Notify(event tcell.Event) {
+func (t *TermEventsNotifier) NotifyListeners(event tcell.Event) {
 	for listener := range t.listeners {
-		listener.handleTermEvents(event)
+		listener.baseHandleTermEvents(listener, event)
 	}
 }
 

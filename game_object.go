@@ -1,51 +1,46 @@
 package intermplay
 
-import "github.com/gdamore/tcell/v2"
-
 type (
 	Object interface {
-		awake()
-		update()
-		dispose()
+		awake(Object)
+		update(Object)
+		dispose(Object)
 		Awake()
 		Update()
 		Dispose()
-	}
-
-	GameObject interface {
-		// Style() tcell.Style
-		HandleEvent(tcell.Event)
-		Object
-		Transform
 		TermEventsListener
 	}
 
-	gameObject struct {
-		RootPosition Vector2
+	IGameObject interface {
+		Object
+		Transform
 	}
-	// GameObject struct {
-	// }
+
+	GameObject struct {
+		RootPosition Vector2
+		// Style() tcell.Style
+		IGameObject
+		DefaultTermEventsListener
+	}
 )
 
-func (obj *gameObject) handleTermEvents(tcell.Event) {}
-
-func (obj *gameObject) awake() {
-	globalEventer.Register(obj)
-	obj.Awake()
+func (obj *GameObject) awake(i Object) {
+	globalEventer.Register(i)
+	i.Awake()
 }
-func (obj *gameObject) update() {
-	obj.Update()
+func (obj *GameObject) update(i Object) {
+	i.Update()
 }
-func (obj *gameObject) dispose() {
-	globalEventer.Unregister(obj)
-	obj.Dispose()
+func (obj *GameObject) dispose(i Object) {
+	globalEventer.Unregister(i)
+	i.Dispose()
 }
 
-func (obj *gameObject) Awake()   {}
-func (obj *gameObject) Update()  {}
-func (obj *gameObject) Dispose() {}
+func (obj *GameObject) Awake()   {}
+func (obj *GameObject) Update()  {}
+func (obj *GameObject) Dispose() {}
 
-// func (obj *gameObject) Position() Vector2 {
+// func (obj *GameObject) Position() Vector2 {
 // 	return obj.RootPosition
 // }
-// func (obj *gameObject) SetPosition(vec Vector2) {}
+// func (obj *GameObject) SetPosition(vec Vector2) {}

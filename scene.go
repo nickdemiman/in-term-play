@@ -7,58 +7,58 @@ import (
 
 type (
 	IScene interface {
-		AddObject(GameObject)
-		Object
+		AddObject(IGameObject)
+		awake(IScene)
+		update(IScene)
+		dispose(IScene)
+		Awake()
+		Update()
+		Dispose()
 		timer.TimerSender
 	}
 
 	Scene struct {
-		GameObjects map[GameObject]bool
-		Quitq       chan struct{}
+		GameObjects map[IGameObject]bool
 		Bounds      Rect
 		Style       tcell.Style
 		IScene
 	}
 )
 
-func (scene Scene) AddObject(obj GameObject) {
+func (scene *Scene) AddObject(obj IGameObject) {
 	_, ok := scene.GameObjects[obj]
 
 	if !ok {
 		scene.GameObjects[obj] = true
-		obj.awake()
+		obj.awake(obj)
 	}
 }
 
-func (scene Scene) NotifyTimer() {
-	scene.update()
+func (scene *Scene) NotifyTimer() {
+	scene.update(scene)
 }
 
-func (scene Scene) awake() {
-	scene.Awake()
-
-	<-scene.Quitq
+func (scene *Scene) awake(s IScene) {
+	s.Awake()
 }
-func (scene Scene) update() {
-	scene.Update()
-}
-func (scene Scene) dispose() {
-	scene.Quitq <- struct{}{}
 
+func (scene *Scene) update(s IScene) {
+	s.Update()
+}
+func (scene *Scene) dispose(s IScene) {
 	for obj := range scene.GameObjects {
 		obj.Dispose()
 		delete(scene.GameObjects, obj)
 	}
 
-	timer.GetTimer().Unregister(scene)
 	GetRenderer().Clear()
 
-	scene.Dispose()
+	s.Dispose()
 }
 
-func (scene Scene) Awake()   {}
-func (scene Scene) Update()  {}
-func (scene Scene) Dispose() {}
+func (scene *Scene) Awake()   {}
+func (scene *Scene) Update()  {}
+func (scene *Scene) Dispose() {}
 
 // func NewScene(x, y, width, height int) IScene {
 // 	scene := new(S)
