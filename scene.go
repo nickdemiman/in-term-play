@@ -2,26 +2,25 @@ package intermplay
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/nickdemiman/in-term-play/timer"
 )
 
 type (
 	IScene interface {
-		AddObject(IGameObject)
+		updatePhysics(float32)
 		awake(IScene)
 		update(IScene)
 		dispose(IScene)
 		Awake()
 		Update()
 		Dispose()
-		timer.TimerSender
+		AddObject(IGameObject)
 	}
 
 	Scene struct {
 		GameObjects map[IGameObject]bool
 		Bounds      Rect
 		Style       tcell.Style
-		IScene
+		// IScene
 	}
 )
 
@@ -56,21 +55,15 @@ func (scene *Scene) dispose(s IScene) {
 	s.Dispose()
 }
 
+func (scene *Scene) updatePhysics(dt float32) {
+	for obj := range scene.GameObjects {
+		v, ok := interface{}(obj).(IMoveable)
+		if ok {
+			v.UpdatePhysics(dt)
+		}
+	}
+}
+
 func (scene *Scene) Awake()   {}
 func (scene *Scene) Update()  {}
 func (scene *Scene) Dispose() {}
-
-// func NewScene(x, y, width, height int) IScene {
-// 	scene := new(S)
-
-// 	style := tcell.StyleDefault.
-// 		Foreground(tcell.ColorWhite).
-// 		Background(tcell.ColorBlack)
-
-// 	scene.quitq = make(chan struct{})
-// 	scene.GameObjects = make(map[GameObject]bool)
-// 	scene.Bounds = NewRect(x, y, width, height)
-// 	scene.Style = style
-
-// 	return scene
-// }

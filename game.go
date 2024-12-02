@@ -3,93 +3,138 @@ package intermplay
 import (
 	"fmt"
 	"os"
-	"time"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 type (
 	Game struct {
-		quitq        chan struct{}
+		quitTerm     chan struct{}
+		quitPhys     chan struct{}
+		quitc        chan struct{}
 		gameover     bool
 		currentScene IScene
-		manager      gameEventManager
-		DefaultTermEventsListener
+		// manager             gameEventManager
+		termEventChain      chan tcell.Event
+		termEventsListeners map[TermEventsListener]bool
+		wg                  sync.WaitGroup
+		TermEventsListener
+		sync.Mutex
 	}
+
+	TermEventsListener interface {
+		HandleTermEvents(tcell.Event)
+	}
+)
+
+const (
+	dt                 float32 = 0.05
+	defaultAccumulator float32 = 0.1
 )
 
 var (
 	_term tcell.Screen
+	game  *Game
 )
 
-func NewGame() *Game {
-	game := new(Game)
-	game.gameover = false
-	game.quitq = make(chan struct{})
-	game.manager = gameEventManager{}
+func GetGame() *Game {
+	if game == nil {
+		game = new(Game)
+		game.gameover = false
+		game.quitTerm = make(chan struct{})
+		game.quitPhys = make(chan struct{})
+		game.quitc = make(chan struct{})
+		// game.manager = gameEventManager{}
+		game.termEventsListeners = make(map[TermEventsListener]bool)
+		game.termEventChain = make(chan tcell.Event)
+	}
 
 	return game
 }
 
 func (game *Game) Close() {
-	game.currentScene.Dispose()
-	GetRenderer().Fini()
-	game.quitq <- struct{}{}
+	defer game.Unlock()
+	game.Lock()
+
+	game.currentScene.dispose(game.currentScene)
+	game.quitc <- struct{}{}
+	game.quitTerm <- struct{}{}
+	game.quitPhys <- struct{}{}
 }
 
-func (game *Game) LoadScene(scene IScene) {
+func (game *Game) LoadScene(scene IScene) *Game {
+	defer game.Unlock()
+	game.Lock()
+
 	if game.currentScene != nil {
-		// timer.GetTimer().Unregister(game.currentScene)
 		game.currentScene.dispose(game.currentScene)
 	}
-
-	scene.awake(scene)
-	// timer.GetTimer().Register(scene)
 	game.currentScene = scene
+
+	return game
 }
 
-func (game *Game) RunRenderer() {
-	ticker := time.NewTicker(time.Millisecond * 100)
-
+func (game *Game) termEventLoop() {
+	defer game.wg.Done()
 loop:
 	for {
 		select {
-		case <-ticker.C:
-			if game.currentScene != nil {
-				game.currentScene.update(game.currentScene)
-			}
-		case <-game.quitq:
+		case event := <-game.termEventChain:
+			game.NotifyListeners(event)
+		case <-game.quitTerm:
 			break loop
 		}
 	}
 }
 
-func (game *Game) Init() {
-	globalEventer = TermEventsNotifier{
-		listeners: make(map[TermEventsListener]bool),
-	}
-	// timer.SetInterval(time.Millisecond * 100)
+func (game *Game) physicsLoop() {
+	defer game.wg.Done()
+	var accumulator float32 = defaultAccumulator
 
-	go game.RunRenderer()
-	go globalEventer.Run()
+loop:
+	for {
+		select {
+		case <-game.quitPhys:
+			break loop
+		default:
+			for accumulator > dt {
+				game.currentScene.updatePhysics(dt)
+				accumulator -= dt
+			}
+
+			accumulator = defaultAccumulator
+
+			game.currentScene.update(game.currentScene)
+		}
+	}
 }
 
 func (game *Game) Run() {
-	globalEventer.Register(game)
+	game.wg.Add(2)
+	go GetRenderer().ChannelEvents(game.termEventChain, game.quitc)
 
-	<-game.quitq
+	game.Register(game)
+	game.currentScene.awake(game.currentScene)
 
-	globalEventer.Unregister(game)
+	go game.termEventLoop()
+	go game.physicsLoop()
+
+	game.wg.Wait()
+
+	game.Unregister(game)
+
+	GetRenderer().Clear()
+	GetRenderer().Fini()
 }
 
 func (game *Game) handleEscape(key tcell.Key) {
 	if key == tcell.KeyEscape {
-		game.Close()
+		go game.Close()
 	}
 }
 
-func (game *Game) handleTermEvents(ev tcell.Event) {
-
+func (game *Game) HandleTermEvents(ev tcell.Event) {
 	switch ev := ev.(type) {
 	case *tcell.EventKey:
 		game.handleEscape(ev.Key())
@@ -121,4 +166,22 @@ func GetRenderer() tcell.Screen {
 	} else {
 		return _term
 	}
+}
+
+func (game *Game) NotifyListeners(event tcell.Event) {
+	for listener := range game.termEventsListeners {
+		listener.HandleTermEvents(event)
+	}
+}
+
+func (game *Game) Register(listener TermEventsListener) {
+	defer game.Unlock()
+	game.Lock()
+	game.termEventsListeners[listener] = true
+}
+
+func (game *Game) Unregister(listener TermEventsListener) {
+	defer game.Unlock()
+	game.Lock()
+	delete(game.termEventsListeners, listener)
 }

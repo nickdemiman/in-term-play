@@ -6,12 +6,12 @@ import (
 )
 
 func main() {
-	game := intermplay.NewGame()
+	game := intermplay.GetGame()
 
 	scene := internal.NewMainScene(0, 0, 50, 20)
 
-	game.Init()
-	game.LoadScene(scene)
-	game.Run()
+	game.
+		LoadScene(scene).
+		Run()
 
 }

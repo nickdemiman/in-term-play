@@ -1,38 +1,34 @@
 package intermplay
 
 type (
-	Object interface {
-		awake(Object)
-		update(Object)
-		dispose(Object)
+	IGameObject interface {
+		awake(IGameObject)
+		update(IGameObject)
+		dispose(IGameObject)
 		Awake()
 		Update()
 		Dispose()
 		TermEventsListener
-	}
-
-	IGameObject interface {
-		Object
 		Transform
 	}
 
-	GameObject struct {
-		RootPosition Vector2
-		// Style() tcell.Style
-		IGameObject
-		DefaultTermEventsListener
-	}
+	GameObject struct{}
 )
 
-func (obj *GameObject) awake(i Object) {
-	globalEventer.Register(i)
+//lint:ignore U1000 перегрузка
+func (obj *GameObject) awake(i IGameObject) {
+	game.Register(i)
 	i.Awake()
 }
-func (obj *GameObject) update(i Object) {
+
+//lint:ignore U1000 перегрузка
+func (obj *GameObject) update(i IGameObject) {
 	i.Update()
 }
-func (obj *GameObject) dispose(i Object) {
-	globalEventer.Unregister(i)
+
+//lint:ignore U1000 перегрузка
+func (obj *GameObject) dispose(i IGameObject) {
+	game.Unregister(i)
 	i.Dispose()
 }
 
@@ -40,7 +36,7 @@ func (obj *GameObject) Awake()   {}
 func (obj *GameObject) Update()  {}
 func (obj *GameObject) Dispose() {}
 
-// func (obj *GameObject) Position() Vector2 {
-// 	return obj.RootPosition
-// }
-// func (obj *GameObject) SetPosition(vec Vector2) {}
+func (obj *GameObject) Position() Vector2 {
+	return Vector2Null
+}
+func (obj *GameObject) SetPosition(vec Vector2) {}

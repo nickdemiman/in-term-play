@@ -1,42 +1,27 @@
 package intermplay
 
-// import (
-// 	"time"
-// )
+// import "github.com/gdamore/tcell/v2"
 
 // type (
-// 	Collider interface {
-// 		Collides(x, y int) bool
-// 		Bounds() ColliderMap
-
-// 		// EventHandler
+// 	CollisionEvent struct {
+// 		source, target Collider
+// 		BaseEvent
 // 	}
 
-// 	EventCollision struct {
-// 		when      time.Time
-// 		initiator Collider
-// 		target    Collider
+// 	Collider interface {
+// 		CollisionMap() CollisionMap
+// 		Collide(target CollisionMap)
+// 		CollideXY(x, y int)
+// 		HandleCollisionEvent(tcell.Event)
 // 	}
 // )
 
-// func (e *EventCollision) When() time.Time {
-// 	return e.when
+// func (ce *CollisionEvent) Source() Collider {
+// 	return ce.source
 // }
 
-// func (e *EventCollision) Initiator() Collider {
-// 	return e.initiator
+// func (ce *CollisionEvent) Target() Collider {
+// 	return ce.target
 // }
 
-// func (e *EventCollision) Target() Collider {
-// 	return e.target
-// }
-
-// func HandleCollision(init, target Collider) {
-// 	when := time.Now()
-
-// 	eventInit := &EventCollision{when: when, initiator: init, target: target}
-// 	eventTarget := &EventCollision{when: when, initiator: target, target: init}
-
-// 	init.HandleEvent(eventInit)
-// 	target.HandleEvent(eventTarget)
-// }
+// func HandleCollision(a, b Collider) {}

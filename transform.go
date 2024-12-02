@@ -7,10 +7,11 @@ type (
 	}
 
 	IMoveable interface {
-		Velocity() uint
-		SetVelocity(uint)
+		Velocity() float32
+		SetVelocity(float32)
 		MoveDirection() Vector2
 		SetMoveDirection(Vector2)
+		UpdatePhysics(float32)
 		Move()
 	}
 )

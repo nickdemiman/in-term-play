@@ -7,10 +7,6 @@ import (
 )
 
 type (
-	// Food interface {
-	// 	GameObject
-	// }
-
 	Food struct {
 		position engine.Vector2
 		style    tcell.Style
@@ -26,27 +22,21 @@ func (f *Food) SetPosition(pos engine.Vector2) {
 	f.position = pos
 }
 
-func (f *Food) Awake() {}
-
 func (f *Food) Update() {
 	engine.GetRenderer().SetContent(
-		f.position.X,
-		f.position.Y,
+		int(f.position.X),
+		int(f.position.Y),
 		' ',
 		nil,
 		f.style,
 	)
 }
 
-func (f *Food) Dispose() {}
-
 func (f *Food) Style() tcell.Style {
 	return f.style
 }
 
-func (f *Food) HandleEvent(ev tcell.Event) {
-
-}
+func (f *Food) HandleTermEvents(ev tcell.Event) {}
 
 func NewFood(pos engine.Vector2) *Food {
 	f := new(Food)

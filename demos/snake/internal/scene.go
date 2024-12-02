@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"math/rand/v2"
 
 	"github.com/gdamore/tcell/v2"
@@ -8,15 +9,27 @@ import (
 )
 
 type MainScene struct {
-	// engine.IScene
-
 	engine.Scene
 }
 
 var _player *Player
+var _food *Food
 
-func randRange(min, max int) int {
-	return rand.IntN(max-min) + min
+func randRangeFloat32(min, max float32) float32 {
+	return min + rand.Float32()*(max-min)
+}
+
+func (scene *MainScene) drawPoints() {
+	x := scene.Bounds.Origin().X
+	y := scene.Bounds.Origin().Y
+	_, h := scene.Bounds.Size()
+
+	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	text := fmt.Sprintf("Points: %d", _player.points)
+
+	for i, ch := range text {
+		engine.GetRenderer().SetContent(int(x)+i, int(y+h)+1, ch, nil, style)
+	}
 }
 
 func (scene *MainScene) generateFood() {
@@ -24,18 +37,17 @@ func (scene *MainScene) generateFood() {
 	y := scene.Bounds.Origin().Y
 	w, h := scene.Bounds.Size()
 
-	_x := randRange(x, x+w-1)
-	_y := randRange(y, y+h-1)
-
-	food := NewFood(engine.NewVector2(_x, _y))
-
-	scene.AddObject(food)
+	_food.SetPosition(engine.Vector2{
+		X: randRangeFloat32(x, x+w-1),
+		Y: randRangeFloat32(y, y+h-1),
+	})
 }
 
 func (scene *MainScene) drawBorders() {
-	x := scene.Bounds.Origin().X
-	y := scene.Bounds.Origin().Y
-	w, h := scene.Bounds.Size()
+	x := int(scene.Bounds.Origin().X)
+	y := int(scene.Bounds.Origin().Y)
+	w := int(scene.Bounds.W())
+	h := int(scene.Bounds.H())
 
 	engine.GetRenderer().SetContent(x, y, '┌', nil, scene.Style)
 	engine.GetRenderer().SetContent(x, y+h, '└', nil, scene.Style)
@@ -55,81 +67,75 @@ func (scene *MainScene) drawBorders() {
 		engine.GetRenderer().SetContent(i, y+h, '─', nil, scene.Style)
 	}
 }
-
-func (scene *MainScene) Awake() {
-	_player = NewPlayer(engine.NewVector2(10, 10), 5)
-	food := NewFood(engine.NewVector2(5, 5))
-	scene.AddObject(_player)
-	scene.AddObject(food)
-}
-func (scene *MainScene) Update() {
-	engine.GetRenderer().Clear()
-	scene.drawBorders()
-
-	pos := _player.Position()
-	pos.Add(_player.MoveDirection())
-
-loop:
-	for obj := range scene.GameObjects {
-		switch obj.(type) {
-		case *Food:
-			if pos.IsEqual(obj.Position()) {
-				_player.Move()
-				_player.Eat()
-				delete(scene.GameObjects, obj)
-				scene.generateFood()
-
-				break loop
-			}
-		}
-	}
-
-	_player.Move()
-
-	for obj := range scene.GameObjects {
-		scene.checkBounds(obj)
-		obj.Update()
-	}
-
-	engine.GetRenderer().Sync()
-}
-func (scene *MainScene) Dispose() {}
-
 func (scene *MainScene) checkBounds(obj engine.IGameObject) {
 	pos := obj.Position()
 	x := scene.Bounds.Origin().X
 	y := scene.Bounds.Origin().Y
 	w, h := scene.Bounds.Size()
 
-	if pos.X < x+1 {
-		pos.X = x + w - 1
+	if pos.X < x+1.0 {
+		pos.X = x + w - 1.0
 		obj.SetPosition(pos)
 
 		return
 	}
 
-	if pos.X > w-1 {
-		pos.X = x + 1
+	if pos.X > w {
+		pos.X = x + 1.0
 		obj.SetPosition(pos)
 
 		return
 	}
 
-	if pos.Y < y+1 {
-		pos.Y = y + h - 1
+	if pos.Y < y+1.0 {
+		pos.Y = y + h - 1.0
 		obj.SetPosition(pos)
 
 		return
 	}
 
-	if pos.Y > h-1 {
-		pos.Y = y + 1
+	if pos.Y > h {
+		pos.Y = y + 1.0
 		obj.SetPosition(pos)
 
 		return
 	}
-
 }
+
+func (scene *MainScene) Awake() {
+	_player = NewPlayer(engine.NewVector2(10, 10), 5)
+	_food = NewFood(engine.NewVector2(5, 5))
+	scene.AddObject(_player)
+	scene.AddObject(_food)
+
+	engine.GetRenderer().Sync()
+}
+func (scene *MainScene) Update() {
+	engine.GetRenderer().Clear()
+	scene.drawBorders()
+	scene.drawPoints()
+
+	pos := _player.Position()
+
+	if int(pos.X) == int(_food.position.X) && int(pos.Y) == int(_food.position.Y) {
+		_player.Eat()
+		scene.generateFood()
+	}
+
+	if _player.checkSelfCollide(pos.XY()) {
+		// go engine.GetGame().Close()
+		engine.DispatchEvent(&engine.GameOverEvent{})
+		return
+	}
+
+	for obj := range scene.GameObjects {
+		scene.checkBounds(obj)
+		obj.Update()
+	}
+
+	engine.GetRenderer().Show()
+}
+func (scene *MainScene) Dispose() {}
 
 func NewMainScene(x, y, width, height int) engine.IScene {
 	scene := new(MainScene)
@@ -139,7 +145,7 @@ func NewMainScene(x, y, width, height int) engine.IScene {
 		Background(tcell.ColorBlack)
 
 	scene.GameObjects = make(map[engine.IGameObject]bool)
-	scene.Bounds = engine.NewRect(x, y, width, height)
+	scene.Bounds = engine.NewRect(float32(x), float32(y), float32(width), float32(height))
 	scene.Style = style
 
 	return scene

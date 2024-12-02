@@ -3,24 +3,12 @@ package intermplay
 import "errors"
 
 type (
-	// Vector2 interface {
-	// 	X() int
-	// 	Y() int
-	// 	SetX(int)
-	// 	SetY(int)
-	// 	Add(Vector2)
-	// 	Sub(Vector2)
-	// 	Multiply(int)
-	// 	Divide(int) error
-	// 	IsEqual(Vector2) bool
-	// }
-
 	Vector2 struct {
-		X, Y int
+		X, Y float32
 	}
 )
 
-func NewVector2(x, y int) Vector2 {
+func NewVector2(x, y float32) Vector2 {
 	return Vector2{
 		X: x,
 		Y: y,
@@ -29,23 +17,23 @@ func NewVector2(x, y int) Vector2 {
 
 var (
 	Vector2Up = Vector2{
-		X: 0,
-		Y: -1,
+		X: 0.0,
+		Y: -1.0,
 	}
 
 	Vector2Down = Vector2{
-		X: 0,
-		Y: 1,
+		X: 0.0,
+		Y: 1.0,
 	}
 
 	Vector2Left = Vector2{
-		X: -1,
-		Y: 0,
+		X: -1.0,
+		Y: 0.0,
 	}
 
 	Vector2Right = Vector2{
-		X: 1,
-		Y: 0,
+		X: 1.0,
+		Y: 0.0,
 	}
 
 	Vector2Null = Vector2{}
@@ -78,6 +66,10 @@ func Vector2Sub(first, second Vector2) *Vector2 {
 	return out
 }
 
+func (src *Vector2) XY() (float32, float32) {
+	return src.X, src.Y
+}
+
 func (src *Vector2) Add(dst Vector2) {
 	src.X += dst.X
 	src.Y += dst.Y
@@ -88,13 +80,13 @@ func (src *Vector2) Sub(dst Vector2) {
 	src.Y -= dst.Y
 }
 
-func (src *Vector2) Multiply(mult int) {
+func (src *Vector2) Multiply(mult float32) {
 	src.X *= mult
 	src.Y *= mult
 }
 
-func (src *Vector2) Divide(div int) error {
-	if div == 0 {
+func (src *Vector2) Divide(div float32) error {
+	if div == 0.0 {
 		return errors.New("деление на 0")
 	}
 
