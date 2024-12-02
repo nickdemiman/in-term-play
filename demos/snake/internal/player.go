@@ -16,7 +16,7 @@ type (
 	}
 )
 
-const playerVelocity float32 = 1.0
+const playerVelocity float32 = 2
 
 func NewPlayer(position engine.Vector2, length int) *Player {
 	player := new(Player)
@@ -26,19 +26,19 @@ func NewPlayer(position engine.Vector2, length int) *Player {
 	player.styleHead = tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorRed)
 	player.styleBody = tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorGreen)
 
-	player.SetVelocity(playerVelocity)
-	player.SetMoveDirection(engine.Vector2Right)
+	// player.SetVelocity(playerVelocity)
+	// player.SetMoveDirection(engine.Vector2Right)
 
 	player.body = append(
 		player.body,
-		NewCell(position, player.Velocity(), player.MoveDirection(), player.styleHead),
+		NewCell(position, playerVelocity, engine.Vector2Right, player.styleHead),
 	)
 
 	for i := 1; i < length; i++ {
 
 		player.body = append(
 			player.body,
-			NewCell(engine.NewVector2(position.X-float32(i), position.Y), player.Velocity(), player.MoveDirection(), player.styleBody),
+			NewCell(engine.NewVector2(position.X-float32(i), position.Y), playerVelocity, engine.Vector2Right, player.styleBody),
 		)
 	}
 
@@ -60,13 +60,13 @@ func (p *Player) checkSelfCollide(x, y float32) bool {
 	return false
 }
 
-// func (p *Player) Position() engine.Vector2 {
-// 	return p.head.Position()
-// }
+func (p *Player) Position() engine.Vector2 {
+	return p.head.Position()
+}
 
-// func (p *Player) SetPosition(newPos engine.Vector2) {
-// 	p.head.SetPosition(newPos)
-// }
+func (p *Player) SetPosition(newPos engine.Vector2) {
+	p.head.SetPosition(newPos)
+}
 
 func (p *Player) Style() tcell.Style {
 	return p.styleHead
@@ -84,7 +84,7 @@ func (p *Player) nextPosition(dt float32) engine.Vector2 {
 }
 
 func (p *Player) UpdatePhysics(dt float32) {
-	curPos := p.head.Position()
+	curPos := p.Position()
 	nextPos := p.nextPosition(dt)
 
 	if int(curPos.X) != int(nextPos.X) || int(curPos.Y) != int(nextPos.Y) {
@@ -98,21 +98,15 @@ func (p *Player) UpdatePhysics(dt float32) {
 	p.head.UpdatePhysics(dt)
 }
 
-//	func (p *Player) Velocity() float32 {
-//		return p.velocity
-//	}
-func (p *Player) SetSnakeVelocity(velocity float32) {
+func (p *Player) Velocity() float32 {
+	return p.head.Velocity()
+}
+
+func (p *Player) SetVelocity(velocity float32) {
 	for _, playerCell := range p.body {
 		playerCell.SetVelocity(velocity)
 	}
 }
-
-// func (p *Player) SetVelocity(newVelocity float32) {
-// 	p.SetVelocity(newVelocity)
-// 	for i := 1; i < len(_player.body); i++ {
-// 		_player.body[i].velocity = newVelocity
-// 	}
-// }
 
 func (p *Player) Update() {
 	for _, playerCell := range p.body {
@@ -120,7 +114,11 @@ func (p *Player) Update() {
 	}
 }
 
-func (p *Player) SetHeadMoveDirection(newDirection engine.Vector2) {
+func (p *Player) MoveDirection() engine.Vector2 {
+	return p.head.MoveDirection()
+}
+
+func (p *Player) SetMoveDirection(newDirection engine.Vector2) {
 	defer p.Unlock()
 	p.Lock()
 
@@ -139,7 +137,6 @@ func (p *Player) SetHeadMoveDirection(newDirection engine.Vector2) {
 		return
 	}
 
-	p.SetMoveDirection(newDirection)
 	p.head.SetMoveDirection(newDirection)
 }
 
@@ -151,6 +148,14 @@ func (p *Player) Eat() {
 	pos.Sub(ce.MoveDirection())
 	p.body = append(p.body, NewCell(pos, p.Velocity(), ce.MoveDirection(), ce.style))
 	p.points++
+
+	// if p.points == 5 {
+	// 	p.SetVelocity(6)
+	// }
+
+	// if p.points == 10 {
+	// 	p.SetVelocity(9)
+	// }
 }
 
 func (p *Player) Points() uint {

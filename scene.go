@@ -6,9 +6,10 @@ import (
 
 type (
 	IScene interface {
-		updatePhysics(float32)
+		updatePhysics(IScene)
+		UpdatePhysics(float32)
 		awake(IScene)
-		update(IScene)
+		update(IScene, float32)
 		dispose(IScene)
 		Awake()
 		Update()
@@ -33,15 +34,15 @@ func (scene *Scene) AddObject(obj IGameObject) {
 	}
 }
 
-func (scene *Scene) NotifyTimer() {
-	scene.update(scene)
-}
-
 func (scene *Scene) awake(s IScene) {
 	s.Awake()
 }
 
-func (scene *Scene) update(s IScene) {
+func (scene *Scene) update(s IScene, alpha float32) {
+	for obj := range scene.GameObjects {
+		obj.update(obj, alpha)
+	}
+
 	s.Update()
 }
 func (scene *Scene) dispose(s IScene) {
@@ -55,10 +56,12 @@ func (scene *Scene) dispose(s IScene) {
 	s.Dispose()
 }
 
-func (scene *Scene) updatePhysics(dt float32) {
+func (scene *Scene) updatePhysics(s IScene) {
 	for obj := range scene.GameObjects {
-		obj.UpdatePhysics(dt)
+		obj.updatePhysics(obj, dt)
 	}
+
+	s.UpdatePhysics(dt)
 }
 
 func (scene *Scene) Awake()   {}

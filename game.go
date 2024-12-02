@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -28,14 +29,11 @@ type (
 	}
 )
 
-const (
-	dt                 float32 = 0.05
-	defaultAccumulator float32 = 0.1
-)
-
 var (
-	_term tcell.Screen
-	game  *Game
+	_term            tcell.Screen
+	game             *Game
+	timeBeforeRender time.Time
+	timeAfterRender  time.Time
 )
 
 func GetGame() *Game {
@@ -57,10 +55,9 @@ func (game *Game) Close() {
 	defer game.Unlock()
 	game.Lock()
 
-	game.currentScene.dispose(game.currentScene)
-	game.quitc <- struct{}{}
-	game.quitTerm <- struct{}{}
-	game.quitPhys <- struct{}{}
+	close(game.quitc)
+	close(game.quitTerm)
+	close(game.quitPhys)
 }
 
 func (game *Game) LoadScene(scene IScene) *Game {
@@ -89,8 +86,9 @@ loop:
 }
 
 func (game *Game) physicsLoop() {
+	ticker := time.NewTicker(time.Millisecond)
 	defer game.wg.Done()
-	var accumulator float32 = defaultAccumulator
+	defer ticker.Stop()
 
 loop:
 	for {
@@ -98,14 +96,18 @@ loop:
 		case <-game.quitPhys:
 			break loop
 		default:
+			accumulator := defaultAccumulator
+			timeBeforeRender = <-ticker.C
+
 			for accumulator > dt {
-				game.currentScene.updatePhysics(dt)
+				<-ticker.C
+				game.currentScene.updatePhysics(game.currentScene)
 				accumulator -= dt
 			}
 
-			accumulator = defaultAccumulator
-
-			game.currentScene.update(game.currentScene)
+			alpha := accumulator / dt
+			timeAfterRender = <-ticker.C
+			game.currentScene.update(game.currentScene, alpha)
 		}
 	}
 }
@@ -123,6 +125,7 @@ func (game *Game) Run() {
 	game.wg.Wait()
 
 	game.Unregister(game)
+	game.currentScene.dispose(game.currentScene)
 
 	GetRenderer().Clear()
 	GetRenderer().Fini()
