@@ -1,5 +1,11 @@
 package intermplay
 
+import (
+	"sync"
+
+	"github.com/gdamore/tcell/v2"
+)
+
 type (
 	IGameObject interface {
 		awake(IGameObject)
@@ -12,7 +18,12 @@ type (
 		Transform
 	}
 
-	GameObject struct{}
+	GameObject struct {
+		position      Vector2
+		moveDirection Vector2
+		velocity      float32
+		sync.Mutex
+	}
 )
 
 //lint:ignore U1000 перегрузка
@@ -36,7 +47,33 @@ func (obj *GameObject) Awake()   {}
 func (obj *GameObject) Update()  {}
 func (obj *GameObject) Dispose() {}
 
-func (obj *GameObject) Position() Vector2 {
-	return Vector2Null
+func (obj *GameObject) Position() Vector2 { return obj.position }
+func (obj *GameObject) SetPosition(vec Vector2) {
+	defer obj.Unlock()
+	obj.Lock()
+	obj.position = vec
 }
-func (obj *GameObject) SetPosition(vec Vector2) {}
+
+func (obj *GameObject) MoveDirection() Vector2 { return obj.moveDirection }
+func (obj *GameObject) SetMoveDirection(vec Vector2) {
+	defer obj.Unlock()
+	obj.Lock()
+	obj.moveDirection = vec
+}
+
+func (obj *GameObject) Velocity() float32 { return obj.velocity }
+func (obj *GameObject) SetVelocity(velocity float32) {
+	defer obj.Unlock()
+	obj.Lock()
+	obj.velocity = velocity
+}
+
+//	func (obj *GameObject) updatePhysics(dt float32) {
+//		obj.velocity =
+//	}
+func (obj *GameObject) UpdatePhysics(dt float32)        {}
+func (obj *GameObject) HandleTermEvents(ev tcell.Event) {}
+
+func NewGameObject() IGameObject {
+	return new(GameObject)
+}

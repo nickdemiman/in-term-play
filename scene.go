@@ -57,10 +57,7 @@ func (scene *Scene) dispose(s IScene) {
 
 func (scene *Scene) updatePhysics(dt float32) {
 	for obj := range scene.GameObjects {
-		v, ok := interface{}(obj).(IMoveable)
-		if ok {
-			v.UpdatePhysics(dt)
-		}
+		obj.UpdatePhysics(dt)
 	}
 }
 
