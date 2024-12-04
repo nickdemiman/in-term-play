@@ -11,12 +11,11 @@ import (
 
 type (
 	Game struct {
-		quitTerm     chan struct{}
-		quitPhys     chan struct{}
-		quitc        chan struct{}
-		gameover     bool
-		currentScene IScene
-		// manager             gameEventManager
+		quitTerm            chan struct{}
+		quitPhys            chan struct{}
+		quitc               chan struct{}
+		gameover            bool
+		currentScene        IScene
 		termEventChain      chan tcell.Event
 		termEventsListeners map[TermEventsListener]bool
 		wg                  sync.WaitGroup
@@ -41,7 +40,6 @@ func GetGame() *Game {
 		game.quitTerm = make(chan struct{})
 		game.quitPhys = make(chan struct{})
 		game.quitc = make(chan struct{})
-		// game.manager = gameEventManager{}
 		game.termEventsListeners = make(map[TermEventsListener]bool)
 		game.termEventChain = make(chan tcell.Event)
 	}
@@ -115,8 +113,8 @@ func (game *Game) Run() {
 
 	game.wg.Wait()
 
-	game.Unregister(game)
 	game.currentScene.dispose(game.currentScene)
+	game.Unregister(game)
 
 	GetRenderer().Clear()
 	GetRenderer().Fini()
