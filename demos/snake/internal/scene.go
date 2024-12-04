@@ -38,8 +38,8 @@ func (scene *MainScene) generateFood() {
 	w, h := scene.Bounds.Size()
 
 	_food.SetPosition(engine.Vector2{
-		X: randRangeFloat32(x, x+w-1),
-		Y: randRangeFloat32(y, y+h-1),
+		X: randRangeFloat32(x+1, x+w-1),
+		Y: randRangeFloat32(y+1, y+h-1),
 	})
 }
 
@@ -67,7 +67,7 @@ func (scene *MainScene) drawBorders() {
 		engine.GetRenderer().SetContent(i, y+h, '─', nil, scene.Style)
 	}
 }
-func (scene *MainScene) checkBounds(obj engine.IGameObject) {
+func (scene *MainScene) checkBounds(obj *Player) {
 	pos := obj.Position()
 	x := scene.Bounds.Origin().X
 	y := scene.Bounds.Origin().Y
@@ -103,7 +103,7 @@ func (scene *MainScene) checkBounds(obj engine.IGameObject) {
 }
 
 func (scene *MainScene) Awake() {
-	_player = NewPlayer(engine.NewVector2(10, 10), 5)
+	_player = NewPlayer(engine.NewVector2(10, 10), playerLen)
 	_food = NewFood(engine.NewVector2(5, 5))
 	scene.AddObject(_player)
 	scene.AddObject(_food)
@@ -115,6 +115,14 @@ func (scene *MainScene) Update() {
 	scene.drawBorders()
 	scene.drawPoints()
 
+	for obj := range scene.GameObjects {
+		obj.Update()
+	}
+
+	engine.GetRenderer().Show()
+}
+func (scene *MainScene) Dispose() {}
+func (scene *MainScene) UpdatePhysics(dt float32) {
 	pos := _player.Position()
 
 	if int(pos.X) == int(_food.position.X) && int(pos.Y) == int(_food.position.Y) {
@@ -123,19 +131,17 @@ func (scene *MainScene) Update() {
 	}
 
 	if _player.checkSelfCollide(pos.XY()) {
-		// go engine.GetGame().Close()
 		engine.DispatchEvent(&engine.GameOverEvent{})
 		return
 	}
 
 	for obj := range scene.GameObjects {
-		scene.checkBounds(obj)
-		obj.Update()
+		switch t := obj.(type) {
+		case *Player:
+			scene.checkBounds(t)
+		}
 	}
-
-	engine.GetRenderer().Show()
 }
-func (scene *MainScene) Dispose() {}
 
 func NewMainScene(x, y, width, height int) engine.IScene {
 	scene := new(MainScene)

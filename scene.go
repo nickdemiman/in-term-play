@@ -6,7 +6,8 @@ import (
 
 type (
 	IScene interface {
-		updatePhysics(float32)
+		updatePhysics(IScene, float32)
+		UpdatePhysics(float32)
 		awake(IScene)
 		update(IScene)
 		dispose(IScene)
@@ -33,17 +34,21 @@ func (scene *Scene) AddObject(obj IGameObject) {
 	}
 }
 
-func (scene *Scene) NotifyTimer() {
-	scene.update(scene)
-}
-
+//lint:ignore U1000 скрытый метод
 func (scene *Scene) awake(s IScene) {
 	s.Awake()
 }
 
+//lint:ignore U1000 скрытый метод
 func (scene *Scene) update(s IScene) {
+	for obj := range scene.GameObjects {
+		obj.update(obj)
+	}
+
 	s.Update()
 }
+
+//lint:ignore U1000 скрытый метод
 func (scene *Scene) dispose(s IScene) {
 	for obj := range scene.GameObjects {
 		obj.Dispose()
@@ -55,13 +60,13 @@ func (scene *Scene) dispose(s IScene) {
 	s.Dispose()
 }
 
-func (scene *Scene) updatePhysics(dt float32) {
+//lint:ignore U1000 скрытый метод
+func (scene *Scene) updatePhysics(s IScene, dt float32) {
 	for obj := range scene.GameObjects {
-		v, ok := interface{}(obj).(IMoveable)
-		if ok {
-			v.UpdatePhysics(dt)
-		}
+		obj.updatePhysics(obj, dt)
 	}
+
+	s.UpdatePhysics(dt)
 }
 
 func (scene *Scene) Awake()   {}

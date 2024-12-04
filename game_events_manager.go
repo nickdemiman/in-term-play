@@ -5,10 +5,15 @@ import (
 )
 
 func DispatchEvent(ev tcell.Event) {
-	switch ev := ev.(type) {
-	case *RenderEvent:
-		ev.scene.update(ev.scene)
+	switch ev.(type) {
+	// case *RenderEvent:
+	// 	ev.scene.update(ev.scene)
 	case *GameOverEvent:
-		go game.Close()
+		select {
+		case <-game.quitc:
+			return
+		default:
+			go game.Close()
+		}
 	}
 }

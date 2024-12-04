@@ -18,21 +18,21 @@ func NewVector2(x, y float32) Vector2 {
 var (
 	Vector2Up = Vector2{
 		X: 0.0,
-		Y: -1.0,
+		Y: -yDelta,
 	}
 
 	Vector2Down = Vector2{
 		X: 0.0,
-		Y: 1.0,
+		Y: yDelta,
 	}
 
 	Vector2Left = Vector2{
-		X: -1.0,
+		X: -xDelta,
 		Y: 0.0,
 	}
 
 	Vector2Right = Vector2{
-		X: 1.0,
+		X: xDelta,
 		Y: 0.0,
 	}
 
@@ -66,7 +66,7 @@ func Vector2Sub(first, second Vector2) *Vector2 {
 	return out
 }
 
-func (src *Vector2) XY() (float32, float32) {
+func (src Vector2) XY() (float32, float32) {
 	return src.X, src.Y
 }
 
@@ -96,7 +96,7 @@ func (src *Vector2) Divide(div float32) error {
 	return nil
 }
 
-func (vec *Vector2) IsEqual(vec2 Vector2) bool {
+func (vec Vector2) IsEqual(vec2 Vector2) bool {
 	if vec.X == vec2.X && vec.Y == vec2.Y {
 		return true
 	}

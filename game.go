@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
@@ -26,11 +27,6 @@ type (
 	TermEventsListener interface {
 		HandleTermEvents(tcell.Event)
 	}
-)
-
-const (
-	dt                 float32 = 0.05
-	defaultAccumulator float32 = 0.1
 )
 
 var (
@@ -57,10 +53,9 @@ func (game *Game) Close() {
 	defer game.Unlock()
 	game.Lock()
 
-	game.currentScene.dispose(game.currentScene)
-	game.quitc <- struct{}{}
-	game.quitTerm <- struct{}{}
-	game.quitPhys <- struct{}{}
+	close(game.quitc)
+	close(game.quitTerm)
+	close(game.quitPhys)
 }
 
 func (game *Game) LoadScene(scene IScene) *Game {
@@ -89,22 +84,20 @@ loop:
 }
 
 func (game *Game) physicsLoop() {
+	phys := time.NewTicker(time.Millisecond)
+	rend := time.NewTicker(time.Millisecond * 16)
 	defer game.wg.Done()
-	var accumulator float32 = defaultAccumulator
+	defer phys.Stop()
+	defer rend.Stop()
 
 loop:
 	for {
 		select {
 		case <-game.quitPhys:
 			break loop
-		default:
-			for accumulator > dt {
-				game.currentScene.updatePhysics(dt)
-				accumulator -= dt
-			}
-
-			accumulator = defaultAccumulator
-
+		case <-phys.C:
+			game.currentScene.updatePhysics(game.currentScene, 0.0016)
+		case <-rend.C:
 			game.currentScene.update(game.currentScene)
 		}
 	}
@@ -123,6 +116,7 @@ func (game *Game) Run() {
 	game.wg.Wait()
 
 	game.Unregister(game)
+	game.currentScene.dispose(game.currentScene)
 
 	GetRenderer().Clear()
 	GetRenderer().Fini()
